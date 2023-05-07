@@ -1,36 +1,31 @@
 #include <stdio.h>
-#include <signal.h>
 #include <stdlib.h>
+#include <signal.h>
 #include <unistd.h>
 
 void handle_sigint(int sig) {
     static int count = 0;
-    count++;
-    
+    printf("Received signal SIGINT (%d)\n", ++count);
     if (count >= 5) {
-        printf("J'ai reçu %d signaux SIGINT. Je m'arrête maintenant...\n", count);
         exit(0);
-    }
-    else {
-        printf("J'ai reçu le signal SIGINT numéro %d. J'attends la prochaine...\n", count);
     }
 }
 
 int main() {
-    int pid;
-    
-    // Créer un nouveau processus P2
+    pid_t pid;
     if ((pid = fork()) == 0) {
+        // Child process (P2)
         signal(SIGINT, handle_sigint);
-    }
-    else {
-        // Attendre 2 secondes pour s'assurer que P2 a commencé à s'exécuter
-        sleep(2);
-        printf("Je suis P1, mon PID est %d, j'envoie le signal SIGINT à P2 (PID = %d)...\n", getpid(), pid);
-        
-        // Envoyer le signal SIGINT à P2
+        printf("P2 is running with PID %d\n", getpid());
+        while (1) {
+            pause();
+        }
+    } else {
+        // Parent process (PI)
+        sleep(1);  // Give P2 time to initialize
+        printf("P1 is running with PID %d\n", getpid());
+        printf("Sending SIGINT to P2 (PID %d)\n", pid);
         kill(pid, SIGINT);
     }
-    
     return 0;
 }
